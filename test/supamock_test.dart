@@ -3,9 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supamock/supamock.dart';
 
 void main() {
-  late SupabaseMock supabaseMock;
+  late SupaMock supabaseMock;
   setUp(() {
-    supabaseMock = SupabaseMock();
+    supabaseMock = SupaMock();
   });  
   group('A group of tests', () {
     test('test a successful signup', () async {
@@ -14,10 +14,10 @@ void main() {
         "expire_in": 0,
         "refresh_token": "0",
         "token_type": "string",
-        "user": {"id": "1", "email": "test@test.com"}
+        "user": {"id": "0", "email": "test@test.com"}
       });
 
-      final signupClient = supabaseMock.mockSuccessfulSignup();
+      final signupClient = supabaseMock.mockSignup();
 
       final actual = await signupClient.auth.signUp(
         password: '',
@@ -28,33 +28,7 @@ void main() {
       expect(actual.user, expected.user);
     });
 
-    test('test a unsuccessful signup', () async {
-      final expected = AuthResponse.fromJson({});
 
-      final signupClient = supabaseMock.mockUnsuccessfulSignup();
-
-      final actual = await signupClient.auth.signUp(
-        password: '',
-        email: '',
-      );
-      
-      expect(actual.session, expected.session);
-      expect(actual.user, expected.user);
-    });
-
-    test('test a unsuccessful signup', () async {
-      final expected = AuthResponse.fromJson({});
-
-      final signupClient = supabaseMock.mockUnsuccessfulSignup();
-
-      final actual = await signupClient.auth.signUp(
-        password: '',
-        email: '',
-      );
-      
-      expect(actual.session, expected.session);
-      expect(actual.user, expected.user);
-    });
 
     test('test a signup with an exception', () async {
       final signupClient = supabaseMock.mockSignupWithException();
@@ -71,30 +45,16 @@ void main() {
         "expire_in": 0,
         "refresh_token": "0",
         "token_type": "string",
-        "user": {"id": "1", "email": "test@test.com"}
+        "user": {"id": "0", "email": "test@test.com"}
       });
 
-      final signupClient = supabaseMock.mockSuccessfulSignup();
+      final signupClient = supabaseMock.mockSignup();
 
       final actual = await signupClient.auth.signInWithPassword(
         password: '',
         email: '',
       );
 
-      expect(actual.session, expected.session);
-      expect(actual.user, expected.user);
-    });
-
-    test('test a unsuccessful signin', () async {
-      final expected = AuthResponse.fromJson({});
-
-      final signupClient = supabaseMock.mockUnsuccessfulSignup();
-
-      final actual = await signupClient.auth.signInWithPassword(
-        password: '',
-        email: '',
-      );
-      
       expect(actual.session, expected.session);
       expect(actual.user, expected.user);
     });
@@ -114,18 +74,7 @@ void main() {
           "val2": 1
         }];
 
-      final selectClient = supabaseMock.mockSelectTable(expected);
-      final actual = await selectClient.from("test_table").select();
-      expect(actual, expected);
-    });
-
-    test('test a successful select', () async {
-      final expected = [{
-          "val1": "0",
-          "val2": 1
-        }];
-
-      final selectClient = supabaseMock.mockSelectTable(expected);
+      final selectClient = supabaseMock.mockSelectTable(response: expected);
       final actual = await selectClient.from("test_table").select();
       expect(actual, expected);
     });
@@ -136,22 +85,10 @@ void main() {
           "val2": 1
         }];
 
-      final selectClient = supabaseMock.mockInsertTable(expected);
-      final actual = await selectClient.from("test_table").select();
+      final selectClient = supabaseMock.mockInsertSelectTable(reponse: expected);
+      final actual = await selectClient.from("test_table").insert(expected).select();
       expect(actual, expected);
     });
-
-
-    test('test a successful update', () async {
-      final expected = [{
-          "val1": "0",
-          "val2": 1
-        }];
-
-      final selectClient = supabaseMock.mockUpdateTable(expected);
-      final actual = await selectClient.from("test_table").select();
-      expect(actual, expected);
-    });
-
   });
 }
+

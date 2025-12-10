@@ -28,30 +28,96 @@ class _MockUri extends Mock implements Uri {}
 
 class _MockBaseRequest extends Mock implements http.BaseRequest {}
 
-class SupabaseMock {
-  final authSuccessResponse = '''
-      {
-        "access_token": "0",
-        "expire_in": 0,
-        "refresh_token": "0",
-        "token_type": "string",
-        "user": {"id": "1", "email": "test@test.com"}
-      }
-    ''';
+class SupaMock {
   final authErrorResponse = "{}";
-
   final authRequest = '[{"email":"test@test.com"}]';
 
-  SupabaseMock() {
+  SupaMock() {
     registerFallbackValue(_MockUri());
     registerFallbackValue(_MockBaseRequest());
     registerFallbackValue(<String, String>{});
     registerFallbackValue(<String, dynamic>{});
   }
 
-  SupabaseClient mockSuccessfulSignup() {
+  SupabaseClient mockSignup(
+      {Map<String, String> connectedUser = const {
+        "id": "0",
+        "email": "test@test.com",
+      }}) {
+    final authSuccessResponse = '''
+      {
+        "access_token": "0",
+        "expire_in": 0,
+        "refresh_token": "0",
+        "token_type": "string",
+        "user": ${jsonEncode(connectedUser)}
+      }
+    ''';
+
     final mockHttpClient = _MockHttpClient();
 
+    when(
+      () => mockHttpClient.post(
+        any(),
+        headers: any(named: "headers"),
+        body: any(named: 'body'),
+      ),
+    ).thenAnswer((_) async => http.Response(authSuccessResponse, 200));
+
+    when(
+      () => mockHttpClient.send(any()),
+    ).thenAnswer(
+      (_) async => http.StreamedResponse(
+        Stream<List<int>>.value(utf8.encode(authRequest)),
+        200,
+        request: http.Request("GET", _MockUri()),
+      ),
+    );
+    return SupabaseClient(
+      "",
+      "",
+      authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
+      httpClient: mockHttpClient,
+    );
+  }
+
+  SupabaseClient mockSignupWithException({
+    Exception exception = const AuthException(""),
+  }) {
+    final mockHttpClient = _MockHttpClient();
+
+    when(
+      () => mockHttpClient.post(
+        any(),
+        headers: any(named: "headers"),
+        body: any(named: 'body'),
+      ),
+    ).thenThrow(exception);
+
+    return SupabaseClient(
+      "",
+      "",
+      authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
+      httpClient: mockHttpClient,
+    );
+  }
+
+  SupabaseClient mockSignin(
+      {Map<String, dynamic> connectedUser = const {
+        "id": "0",
+        "email": "test@test.com",
+      }}) {
+    final authSuccessResponse = '''
+      {
+        "access_token": "0",
+        "expire_in": 0,
+        "refresh_token": "0",
+        "token_type": "string",
+        "user": ${jsonEncode(connectedUser)}
+      }
+    ''';
+
+    final mockHttpClient = _MockHttpClient();
     when(
       () => mockHttpClient.post(
         any(),
@@ -67,6 +133,7 @@ class SupabaseMock {
           200,
           request: http.Request("GET", _MockUri()),
         ));
+
     return SupabaseClient(
       "",
       "",
@@ -75,16 +142,19 @@ class SupabaseMock {
     );
   }
 
-  SupabaseClient mockUnsuccessfulSignup() {
+  SupabaseClient mockSelectTable({
+    List<Map<String, dynamic>> response = const [],
+  }) {
     final mockHttpClient = _MockHttpClient();
 
-    when(
-      () => mockHttpClient.post(
-        any(),
-        headers: any(named: "headers"),
-        body: any(named: 'body'),
+    when(() => mockHttpClient.send(any())).thenAnswer(
+      (_) async => http.StreamedResponse(
+        Stream<List<int>>.value(utf8.encode(jsonEncode(response))),
+        200,
+        request: http.Request("GET", _MockUri()),
       ),
-    ).thenAnswer((_) async => http.Response(authErrorResponse, 200));
+    );
+
     return SupabaseClient(
       "",
       "",
@@ -93,16 +163,17 @@ class SupabaseMock {
     );
   }
 
-  SupabaseClient mockSignupWithException() {
+  SupabaseClient mockInsertSelectTable({
+    List<Map<String, dynamic>> reponse = const [],
+  }) {
     final mockHttpClient = _MockHttpClient();
 
-    when(
-      () => mockHttpClient.post(
-        any(),
-        headers: any(named: "headers"),
-        body: any(named: 'body'),
-      ),
-    ).thenThrow(Exception());
+    when(() => mockHttpClient.send(any()))
+        .thenAnswer((_) async => http.StreamedResponse(
+              Stream<List<int>>.value(utf8.encode(jsonEncode(reponse))),
+              200,
+              request: http.Request("GET", _MockUri()),
+            ));
 
     return SupabaseClient(
       "",
@@ -112,79 +183,16 @@ class SupabaseMock {
     );
   }
 
-  SupabaseClient signinMock() {
-    final mockHttpClient = _MockHttpClient();
-    when(
-      () => mockHttpClient.post(
-        any(),
-        headers: any(named: "headers"),
-        body: any(named: 'body'),
-      ),
-    ).thenAnswer((_) async => http.Response(authSuccessResponse, 200));
-
-    when(
-      () => mockHttpClient.send(any()),
-    ).thenAnswer((_) async => http.StreamedResponse(
-          Stream<List<int>>.value(utf8.encode(authRequest)),
-          200,
-          request: http.Request("GET", _MockUri()),
-        ));
-
-    return SupabaseClient(
-      "",
-      "",
-      authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
-      httpClient: mockHttpClient,
-    );
-  }
-
-  SupabaseClient mockFailedSignin() {
-    final mockHttpClient = _MockHttpClient();
-
-    when(
-      () => mockHttpClient.post(
-        any(),
-        headers: any(named: "headers"),
-        body: any(named: 'body'),
-      ),
-    ).thenAnswer((_) async => http.Response(authErrorResponse, 200));
-    return SupabaseClient(
-      "",
-      "",
-      authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
-      httpClient: mockHttpClient,
-    );
-  }
-
-  SupabaseClient mockSigninWithException() {
-    final mockHttpClient = _MockHttpClient();
-
-    when(
-      () => mockHttpClient.post(
-        any(),
-        headers: any(named: "headers"),
-        body: any(named: 'body'),
-      ),
-    ).thenThrow(Exception());
-
-    return SupabaseClient(
-      "",
-      "",
-      authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
-      httpClient: mockHttpClient,
-    );
-  }
-
-  SupabaseClient mockSelectTable(expected) {
+  /*SupabaseClient mockUpdateSelectTable({
+    List<Map<String, dynamic>> response = const [],
+  }) {
     final mockHttpClient = _MockHttpClient();
 
     when(() => mockHttpClient.send(any())).thenAnswer((_) async =>
         http.StreamedResponse(
-            Stream<List<int>>.value(utf8.encode(jsonEncode(expected))), 200,
-            request: http.Request("GET", _MockUri()
-        )
-      )
-    );
+            Stream<List<int>>.value(utf8.encode(jsonEncode(response))),
+            200,
+            request: http.Request("GET", _MockUri())));
 
     return SupabaseClient(
       "",
@@ -192,44 +200,6 @@ class SupabaseMock {
       authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
       httpClient: mockHttpClient,
     );
-  }
-
-  SupabaseClient mockInsertTable(expected) {
-    final mockHttpClient = _MockHttpClient();
-
-    when(() => mockHttpClient.send(any())).thenAnswer((_) async =>
-        http.StreamedResponse(
-            Stream<List<int>>.value(utf8.encode(jsonEncode(expected))), 200,
-            request: http.Request("GET", _MockUri()
-        )
-      )
-    );
-
-    return SupabaseClient(
-      "",
-      "",
-      authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
-      httpClient: mockHttpClient,
-    );
-  }
-
-
-  SupabaseClient mockUpdateTable(expected) {
-    final mockHttpClient = _MockHttpClient();
-
-    when(() => mockHttpClient.send(any())).thenAnswer((_) async =>
-        http.StreamedResponse(
-            Stream<List<int>>.value(utf8.encode(jsonEncode(expected))), 200,
-            request: http.Request("GET", _MockUri()
-        )
-      )
-    );
-
-    return SupabaseClient(
-      "",
-      "",
-      authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
-      httpClient: mockHttpClient,
-    );
-  }
+  }*/
 }
+
