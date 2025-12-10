@@ -142,6 +142,27 @@ class SupaMock {
     );
   }
 
+  SupabaseClient mockSigninWithException({
+    Exception exception = const AuthException(""),
+  }) {
+    final mockHttpClient = _MockHttpClient();
+
+    when(
+      () => mockHttpClient.post(
+        any(),
+        headers: any(named: "headers"),
+        body: any(named: 'body'),
+      ),
+    ).thenThrow(exception);
+
+    return SupabaseClient(
+      "",
+      "",
+      authOptions: AuthClientOptions(pkceAsyncStorage: _AsyncStorage()),
+      httpClient: mockHttpClient,
+    );
+  }
+
   SupabaseClient mockSelectTable({
     List<Map<String, dynamic>> response = const [],
   }) {
